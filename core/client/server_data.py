@@ -18,7 +18,7 @@ def fetch_server_data(protocol, version, alternate=False):
         if response.status_code != 200:
             print(f"Failed to fetch server data from {domain}.com, status code: {response.status_code}")
             time.sleep(1)
-            return fetch_server_data(not alternate)
+            return fetch_server_data(protocol, version, not alternate)
         
         data_text = response.text
         print(f"Server data fetched successfully from {domain}.com")
@@ -27,7 +27,7 @@ def fetch_server_data(protocol, version, alternate=False):
     except requests.RequestException as e:
         print(f"Request failed: {e}")
         time.sleep(1)
-        return fetch_server_data(not alternate)
+        return fetch_server_data(protocol, version, not alternate)
     
 def parse_server_data(data):
     lines = data.split('\n')
