@@ -11,3 +11,5 @@ cache/worlds/*.json
 # Environments
 .env
 venv/
+
+test/

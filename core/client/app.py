@@ -1,5 +1,7 @@
+from collections import deque
 import ctypes
-from core.ffi import enet_host_create, enet_host_use_crc32, enet_host_use_new_packet, enet_host_compress_with_range_coder, ENetAddress, enet_address_set_host, enet_host_connect, enet_host_service, ENetEvent, ENetEventType, ENetPacket, enet_packet_create, enet_peer_send, enet_packet_destroy
+from core.ffi import enet_host_create, enet_host_use_crc32, enet_host_use_new_packet, enet_host_compress_with_range_coder, ENetAddress, enet_address_set_host, enet_host_connect, enet_host_service, ENetEvent, ENetEventType, ENetPacket, enet_packet_create, enet_peer_disconnect, enet_peer_send, enet_packet_destroy
+from .inventory import Inventory
 from .login_info import LoginInfo
 from .login import fetch_login_urls, login_via_growid
 from .server_data import fetch_server_data
@@ -19,6 +21,7 @@ class Bot:
         self.password = password
         self.login_info = LoginInfo()
         self.login_urls = None
+        self.inventory = Inventory()
         self.world_name = None
         self.peer = None
         self.host = enet_host_create(None, 1, 2, 0, 0)
@@ -76,6 +79,9 @@ class Bot:
                     case ENetEventType.DISCONNECT_TIMEOUT:
                         print("Connection timed out.")
                         break
+
+    def disconnect(self):
+        enet_peer_disconnect(self.peer, 0)
 
     def send_packet(self, packet_type, data):
         packet = enet_packet_create(None, 4 + len(data), 1)

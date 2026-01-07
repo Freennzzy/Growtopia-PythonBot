@@ -17,6 +17,8 @@ class GamePacketHandler:
                 onCallFunction(client, extended_data)
             case NetGamePacket.SendMapData:
                 onSendMapData(client, extended_data)
+            case NetGamePacket.SendInventoryState:
+                onSendInventoryState(client, extended_data)
             case NetGamePacket.PingRequest:
                 onPingRequest(client, tank_data)
 
@@ -30,6 +32,9 @@ def onSendMapData(client, data):
         print("Something went wrong while parsing map data.")
     else:
         print(f"Map data parsed successfully: {client.world_name}")
+
+def onSendInventoryState(client, data):
+    client.inventory.parse(data)
 
 def onPingRequest(client, data):
     print("Received PingRequest, sending PingReply.")
