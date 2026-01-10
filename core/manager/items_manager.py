@@ -14,7 +14,7 @@ class ItemFlag(IntFlag):
     DROPLESS        = 0x10
     NO_SELF         = 0x20
     NO_SHADOW       = 0x40
-    WORLD_lOCKED    = 0x80
+    WORLD_LOCKED    = 0x80
     BETA            = 0x100
     AUTO_PICKUP     = 0x200
     MOD_FLAG        = 0x400
@@ -35,7 +35,7 @@ class Item:
     action_type: int = 0
     material: int = 0
     name: str = ""
-    texture_file_name: str = 0
+    texture_file_name: str = ""
     texture_hash: int = 0
     cooking_ingredient: int = 0
     visual_effect: int = 0
@@ -76,7 +76,7 @@ class ItemDatabase:
     version: int = 0
     item_count: int = 0
     items: dict[int, Item] = field(default_factory=dict)
-    loaded: bool = 0
+    loaded: bool = False
 
     def add_item(self, item: Item):
         self.items[item.id] = item
