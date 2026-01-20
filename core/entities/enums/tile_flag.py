@@ -17,3 +17,7 @@ class TileFlag(IntFlag):
     PAINTED_RED             = 0x2000
     PAINTED_GREEN           = 0x4000
     PAINTED_BLUE            = 0x8000
+
+    @classmethod
+    def from_bits(cls, bits: int) -> "TileFlag":
+        return cls(bits)

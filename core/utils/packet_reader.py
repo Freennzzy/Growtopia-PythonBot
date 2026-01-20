@@ -9,8 +9,16 @@ class PacketReader:
         self.data = data
         self.offset = 0
 
-    def skip(self, n: int):
+    def remaining(self) -> int:
+        return len(self.data) - self.offset
+
+    def skip(self, n: int) -> None:
         self.offset += n
+
+    def read(self, n: int) -> bytes:
+        v = self.data[self.offset : self.offset + n]
+        self.offset += n
+        return v
 
     def u8(self) -> int:
         v = self.data[self.offset]
@@ -26,3 +34,24 @@ class PacketReader:
         v = struct.unpack_from("<I", self.data, self.offset)[0]
         self.offset += 4
         return v
+
+    def i32(self) -> int:
+        v = struct.unpack_from("<i", self.data, self.offset)[0]
+        self.offset += 4
+        return v
+
+
+    def f32(self) -> float:
+        v = struct.unpack_from("<f", self.data, self.offset)[0]
+        self.offset += 4
+        return v
+
+    def string_u8(self) -> str:
+        length = self.u8()
+        raw = self.read(length)
+        return raw.decode("utf-8", errors="ignore")
+
+    def string_u16(self) -> str:
+        length = self.u16()
+        raw = self.read(length)
+        return raw.decode("utf-8", errors="ignore")
