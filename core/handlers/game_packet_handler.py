@@ -2,7 +2,6 @@ import ctypes
 from .variant_handler import VariantHandler
 from core.entities.enums import NetGamePacket
 from core.ffi import TankPacket
-from parser import parse_map_data
 
 class GamePacketHandler:
     @staticmethod
@@ -26,12 +25,9 @@ def onCallFunction(client, data):
     VariantHandler.handle(client, data)
 
 def onSendMapData(client, data):
-    print("Received SendMapData, saving to cache.")
-    client.world_name = parse_map_data(data)
-    if client.world_name is None:
-        print("Something went wrong while parsing map data.")
-    else:
-        print(f"Map data parsed successfully: {client.world_name}")
+    with open("cache/world.dat", "wb") as f:
+        f.write(data)
+    client.world.parse(data, client.items_database)
 
 def onSendInventoryState(client, data):
     client.inventory.parse(data)

@@ -6,9 +6,10 @@ from .login import fetch_login_urls, login_via_growid
 from .server_data import fetch_server_data
 from core.entities.enums import LoginMethod, NetMessage
 from core.handlers import NetMessageHandler
+from core.manager import World
 
 class Bot:
-    def __init__(self, login_method=LoginMethod.LEGACY, username=None, password=None):
+    def __init__(self, login_method=LoginMethod.LEGACY, username=None, password=None, items_database=None):
         if login_method is LoginMethod.LEGACY and (username is None or password is None):
             raise ValueError("Username and password must be provided for LEGACY login method.")
 
@@ -20,8 +21,9 @@ class Bot:
         self.password = password
         self.login_info = LoginInfo()
         self.login_urls = None
+        self.items_database = items_database
         self.inventory = Inventory()
-        self.world_name = None
+        self.world = World.new()
         self.peer = None
         self.host = enet_host_create(None, 1, 2, 0, 0)
 

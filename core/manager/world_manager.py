@@ -3,82 +3,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import List, Optional
 from core.entities.enums import TileFlag, WeatherType
-from core.entities.struct import (
-    TileType,
-    Basic,
-    Door,
-    Sign,
-    Lock,
-    Seed,
-    Mailbox,
-    Bulletin,
-    Dice,
-    ChemicalSource,
-    AchievementBlock,
-    HeartMonitor,
-    DonationBox,
-    Mannequin,
-    BunnyEgg,
-    GamePack,
-    GameGenerator,
-    XenoniteCrystal,
-    PhoneBooth,
-    Crystal,
-    CrimeInProgress,
-    DisplayBlock,
-    VendingMachine,
-    GivingTree,
-    CountryFlag,
-    WeatherMachine,
-    DataBedrock,
-    Spotlight,
-    FishTankPort,
-    SolarCollector,
-    Forge,
-    SteamOrgan,
-    SilkWorm,
-    SewingMachine,
-    LobsterTrap,
-    PaintingEasel,
-    PetBattleCage,
-    PetTrainer,
-    SteamEngine,
-    LockBot,
-    SpiritStorageUnit,
-    Shelf,
-    VipEntrance,
-    ChallangeTimer,
-    FishWallMount,
-    Portrait,
-    GuildWeatherMachine,
-    FossilPrepStation,
-    DnaExtractor,
-    Howler,
-    ChemsynthTank,
-    StorageBlock,
-    CookingOven,
-    AudioRack,
-    GeigerCharger,
-    AdventureBegins,
-    TombRobber,
-    BallonOMatic,
-    TrainingPort,
-    ItemSucker,
-    CyBot,
-    GuildItem,
-    Growscan,
-    ContainmentFieldPowerNode,
-    SpiritBoard,
-    StormyCloud,
-    TemporaryPlatform,
-    SafeVault,
-    AngelicCountingCloud,
-    InfinityWeatherMachine,
-    PineappleGuzzler,
-    KrakenGalaticBlock,
-    FriendsEntrance,
-    TesseractManipulator
-)
+from core.entities.struct import *
 from core.manager import ItemDatabase
 from core.utils import PacketReader
 
@@ -262,7 +187,6 @@ class World:
 
         tile.flags = TileFlag.from_bits(flags)
         tile.flags_number = flags
-        #print(f"[DEBUG] Tile at ({tile.x}, {tile.y}): fg_id={tile.foreground_item_id}, bg_id={tile.background_item_id}, flags={tile.flags}")
 
         if (
             tile.foreground_item_id > item_database.item_count
@@ -360,7 +284,6 @@ class World:
         self.width = reader.u32()
         self.height = reader.u32()
         self.tile_count = reader.u32()
-        print(f"[DEBUG] World {self.name}")
 
         reader.skip(5)
 
@@ -390,236 +313,547 @@ class World:
                     uid=reader.u32(),
                 )
             )
-        print(f"[DEBUG] {self.dropped.items_count} dropped items")
-        print(f"[DEBUG] Last dropped item UID: {self.dropped.last_dropped_item_uid}")
-        print(f"[DEBUG] Dropped items: {self.dropped.items}")
-        self.base_weather = WeatherType.from_id(reader.u16())
+
+        self.base_weather = WeatherType(reader.u16()).name
         reader.u16()
-        self.current_weather = WeatherType.from_id(reader.u16())
+        self.current_weather = WeatherType(reader.u16()).name
 
     def get_extra_tile_data(self, tile: Tile, reader: PacketReader, extra_tile_type: int, item_database: ItemDatabase) -> None:
         match extra_tile_type:
-            case 1:
-                text = reader.string_u16()
-                flags = reader.u8()
-                print(f"[DEBUG] (SIGN) {text} | {flags} ")
-                tile.tile_type = Sign(text, flags)
-            case 2:
-                text = reader.string_u16()
-                owner_uid = reader.u32()
-                print(f"[DEBUG] (DOOR) {text} | {owner_uid}")
-                tile.tile_type = Door(text, owner_uid)
-            case 3:
-                print(f"[DEBUG] Lock at ({tile.x}, {tile.y})")
+            case 1:  # Sign
+                tile.tile_type = Sign(
+                    reader.string_u16(),
+                    reader.u8()
+                )
 
+            case 2:  # Door
+                tile.tile_type = Door(
+                    reader.string_u16(),
+                    reader.u32()
+                )
+
+            case 3:  # Lock
                 settings = reader.u8()
                 owner_uid = reader.u32()
                 access_count = reader.u32()
-
-                access_uids: list[int] = []
-                for _ in range(access_count):
-                    access_uids.append(reader.u32())
-
+                access_uids = [reader.u32() for _ in range(access_count)]
                 minimum_level = reader.u8()
-
                 reader.read(7)
+
                 if tile.foreground_item_id == 5814:
                     reader.skip(16)
 
                 tile.tile_type = Lock(
-                    settings=settings,
-                    owner_uid=owner_uid,
-                    access_count=access_count,
-                    access_uids=access_uids,
-                    minimum_level=minimum_level,
+                    settings,
+                    owner_uid,
+                    access_count,
+                    access_uids,
+                    minimum_level,
                 )
 
-                print(
-                    f"[DEBUG] (LOCK) owner={owner_uid} "
-                    f"access_count={access_count} "
-                    f"uids={access_uids} "
-                    f"min_level={minimum_level}"
-                )
-            case 4:
+            case 4:  # Seed
                 time_passed = reader.u32()
                 fruit_count = reader.u8()
                 item = item_database.get_item(tile.foreground_item_id)
                 ready_to_harvest = time_passed >= item.grow_time
                 elapsed = timedelta(seconds=time_passed)
-                print(f"[DEBUG] (SEED) Item: {item}, fruit: {fruit_count}, time: {time_passed}, is ready: {ready_to_harvest}")
+
                 tile.tile_type = Seed(
                     time_passed,
                     fruit_count,
                     ready_to_harvest,
                     elapsed,
                 )
-            case 6:
-                unk_1 = reader.string_u16()
-                unk_2 = reader.string_u16()
-                unk_3 = reader.string_u16()
-                unk_4 = reader.u8()
+
+            case 6:  # Mailbox
                 tile.tile_type = Mailbox(
-                    unk_1,
-                    unk_2,
-                    unk_3,
-                    unk_4
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.u8(),
                 )
-            case 7:
-                unk_1 = reader.string_u16()
-                unk_2 = reader.string_u16()
-                unk_3 = reader.string_u16()
-                unk_4 = reader.u8()
+
+            case 7:  # Bulletin
                 tile.tile_type = Bulletin(
-                    unk_1,
-                    unk_2,
-                    unk_3,
-                    unk_4
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.u8(),
                 )
-            case 8:
-                symbol = reader.u8()
-                tile.tile_type = Dice(symbol)
-            case 9:
+
+            case 8:  # Dice
+                tile.tile_type = Dice(
+                    reader.u8()
+                )
+
+            case 9:  # ChemicalSource
                 time_passed = reader.u32()
                 item = item_database.get_item(tile.foreground_item_id)
                 ready_to_harvest = time_passed >= item.grow_time
                 elapsed = timedelta(seconds=time_passed)
+
+                if tile.foreground_item_id == 10656:
+                    reader.skip(4)
+
                 tile.tile_type = ChemicalSource(
                     time_passed,
                     ready_to_harvest,
-                    elapsed
+                    elapsed,
                 )
-            case 10:
-                unk_1 = reader.u32()
-                tile_type = reader.u8()
+
+            case 10:  # AchievementBlock
                 tile.tile_type = AchievementBlock(
-                    unk_1,
-                    tile_type
+                    reader.u32(),
+                    reader.u8(),
                 )
-            case 11:
-                user_id = reader.u32()
-                player_name = reader.string_u8()
-                print(f"[DEBUG] (HEART MONITOR) {player_name} ({user_id})")
+
+            case 11:  # HeartMonitor
                 tile.tile_type = HeartMonitor(
-                    user_id,
-                    player_name
+                    reader.u32(),
+                    reader.string_u16()
                 )
-            case 12:
-                unk_1 = reader.string_u16()
-                unk_2 = reader.string_u16()
-                unk_3 = reader.string_u16()
-                unk_4 = reader.u8()
+
+            case 12:  # DonationBox
                 tile.tile_type = DonationBox(
-                    unk_1,
-                    unk_2,
-                    unk_3,
-                    unk_4
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.string_u16(),
+                    reader.u8(),
                 )
-            case 14:
-                text = reader.string_u16()
-                unk_1 = reader.u8()
-                clothing_1 = reader.u32()
-                clothing_2 = reader.u16()
-                clothing_3 = reader.u16()
-                clothing_4 = reader.u16()
-                clothing_5 = reader.u16()
-                clothing_6 = reader.u16()
-                clothing_7 = reader.u16()
-                clothing_8 = reader.u16()
-                clothing_9 = reader.u16()
-                clothing_10 = reader.u16()
-                print(f"[DEBUG] (MANNEQUIN) {text} | {unk_1} | {clothing_1} | {clothing_2} | {clothing_3} | {clothing_4} | {clothing_5} | {clothing_6} | {clothing_7} | {clothing_8} | {clothing_9} | {clothing_10}")
+
+            case 14:  # Mannequin
                 tile.tile_type = Mannequin(
-                    text,
-                    unk_1,
-                    clothing_1,
-                    clothing_2,
-                    clothing_3,
-                    clothing_4,
-                    clothing_5,
-                    clothing_6,
-                    clothing_7,
-                    clothing_8,
-                    clothing_9,
-                    clothing_10
+                    reader.string_u16(),
+                    reader.u8(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16()
                 )
-            case 15:
-                egg_placed = reader.u32()
+
+            case 15:  # BunnyEgg
                 tile.tile_type = BunnyEgg(
-                    egg_placed
+                    reader.u32()
                 )
-            case 16:
-                team = reader.u8()
+
+            case 16:  # GamePack
                 tile.tile_type = GamePack(
-                    team
+                    reader.u8()
                 )
-            case 17:
+
+            case 17:  # GameGenerator
                 tile.tile_type = GameGenerator()
-            case 18:
-                unk_1 = reader.u8()
-                unk_2 = reader.u32()
+
+            case 18:  # XenoniteCrystal
                 tile.tile_type = XenoniteCrystal(
-                    unk_1,
-                    unk_2
+                    reader.u8(),
+                    reader.u32()
                 )
-            case 19:
-                clothing_1 = reader.u16()
-                clothing_2 = reader.u16()
-                clothing_3 = reader.u16()
-                clothing_4 = reader.u16()
-                clothing_5 = reader.u16()
-                clothing_6 = reader.u16()
-                clothing_7 = reader.u16()
-                clothing_8 = reader.u16()
-                clothing_9 = reader.u16()
+
+            case 19:  # PhoneBooth
                 tile.tile_type = PhoneBooth(
-                    clothing_1,
-                    clothing_2,
-                    clothing_3,
-                    clothing_4,
-                    clothing_5,
-                    clothing_6,
-                    clothing_7,
-                    clothing_8,
-                    clothing_9
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16(),
+                    reader.u16()
                 )
-            case 20:
-                unk_1 = reader.string_u16()
+
+            case 20:  # Crystal
                 tile.tile_type = Crystal(
-                    unk_1
+                    reader.string_u16()
                 )
-            case 21:
-                unk_1 = reader.string_u16()
-                unk_2 = reader.u32()
-                unk_3 = reader.u8()
+
+            case 21:  # CrimeInProgress
                 tile.tile_type = CrimeInProgress(
+                    reader.string_u16(),
+                    reader.u32(),
+                    reader.u8(),
+                )
+
+            case 22:  # Spotlight
+                tile.tile_type = Spotlight()
+
+            case 23:  # DisplayBlock
+                tile.tile_type = DisplayBlock(
+                    reader.u32()
+                )
+
+            case 24:  # VendingMachine
+                tile.tile_type = VendingMachine(
+                    reader.u32(),
+                    reader.i32()
+                )
+
+            case 25:  # FishTankPort
+                flags = reader.u8()
+                fish_count = reader.u32()
+                fishes = [
+                    FishInfo(reader.u32(), reader.u32())
+                    for _ in range(fish_count // 2)
+                ]
+                tile.tile_type = FishTankPort(
+                    flags,
+                    fishes
+                )
+
+            case 26:  # SolarCollector
+                tile.tile_type = SolarCollector(
+                    reader.read(5)
+                )
+
+            case 27:  # Forge
+                tile.tile_type = Forge(
+                    reader.u32()
+                )
+
+            case 28:  # GivingTree
+                tile.tile_type = GivingTree(
+                    reader.u16(),
+                    reader.u32()
+                )
+
+            case 30:  # SteamOrgan
+                tile.tile_type = SteamOrgan(
+                    reader.u8(),
+                    reader.u32()
+                )
+
+            case 31:  # SilkWorm
+                type_ = reader.u8()
+                name = reader.string_u16()
+                age = reader.u32()
+                unk_1 = reader.u32()
+                unk_2 = reader.u32()
+                can_be_fed = reader.u8()
+                food_saturation = reader.u32()
+                water_saturation = reader.u32()
+                color_raw = reader.u32()
+                sick_duration = reader.u32()
+
+                tile.tile_type = SilkWorm(
+                    type_,
+                    name,
+                    age,
                     unk_1,
                     unk_2,
-                    unk_3
+                    can_be_fed,
+                    food_saturation,
+                    water_saturation,
+                    SilkWormColor(
+                        (color_raw >> 24) & 0xFF,
+                        (color_raw >> 16) & 0xFF,
+                        (color_raw >> 8) & 0xFF,
+                        color_raw & 0xFF,
+                    ),
+                    sick_duration,
                 )
-            case 23:
-                item_id = reader.u32()
-                print(f"[DEBUG] (DISPLAY BLOCK) {item_id}")
-                tile.tile_type = DisplayBlock(item_id)
-            case 24:
-                item_id = reader.u32()
-                price = reader.i32()
-                print(f"[DEBUG] (VENDING MACHINE) item_id={item_id} | price={price}")
-                tile.tile_type = VendingMachine(
-                    item_id,
-                    price
+
+            case 32:  # SewingMachine
+                count = reader.u16()
+                tile.tile_type = SewingMachine(
+                    [reader.u32() for _ in range(count)]
                 )
-            case 43:
-                top_left_item_id = reader.u32()
-                top_right_item_id = reader.u32()
-                bottom_left_item_id = reader.u32()
-                bottom_right_item_id = reader.u32()
-                print(f"[DEBUG] (SHELF) {top_left_item_id} | {top_right_item_id} | {bottom_left_item_id} | {bottom_right_item_id}")
+
+            case 33:  # CountryFlag
+                tile.tile_type = CountryFlag(
+                    reader.string_u16()
+                )
+
+            case 34:  # LobsterTrap
+                tile.tile_type = LobsterTrap()
+
+            case 35:  # PaintingEasel
+                tile.tile_type = PaintingEasel(
+                    reader.u32(),
+                    reader.string_u16()
+                )
+
+            case 36:  # PetBattleCage
+                label = reader.string_u16()
+                unk_1 = reader.u32()
+                size = reader.u32()
+                extra = reader.u32()
+                tile.tile_type = PetBattleCage(
+                    label,
+                    unk_1,
+                    extra
+                )
+
+            case 37:  # PetTrainer
+                name = reader.string_u16()
+                count = reader.u32()
+                unk_1 = reader.u32()
+                tile.tile_type = PetTrainer(
+                    name,
+                    count,
+                    unk_1,
+                    [reader.u32() for _ in range(count)]
+                )
+
+
+            case 38:  # SteamEngine
+                tile.tile_type = SteamEngine(
+                    reader.u32()
+                )
+
+            case 39:  # LockBot
+                tile.tile_type = LockBot(
+                    reader.u32()
+                )
+
+            case 40:  # WeatherMachine
+                tile.tile_type = WeatherMachine(
+                    reader.u32()
+                )
+
+            case 41:  # SpiritStorageUnit
+                tile.tile_type = SpiritStorageUnit(
+                    reader.u32()
+                )
+
+            case 42:  # DataBedrock
+                reader.skip(21)
+                tile.tile_type = DataBedrock()
+
+            case 43:  # Shelf
                 tile.tile_type = Shelf(
-                    top_left_item_id,
-                    top_right_item_id,
-                    bottom_left_item_id,
-                    bottom_right_item_id
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
                 )
+
+            case 43:  # Shelf
+                tile.tile_type = Shelf(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32()
+                )
+
+            case 44:  # VipEntrance
+                tile.tile_type = VipEntrance(
+                    reader.u8(),
+                    reader.u32(),
+                    [reader.u32() for _ in range(reader.u32())]
+                )
+
+            case 45:  # ChallangeTimer
+                tile.tile_type = ChallangeTimer()
+
+            case 47:  # FishWallMount
+                tile.tile_type = FishWallMount(
+                    reader.string_u16(),
+                    reader.u32(),
+                    reader.u8()
+                )
+
+            case 48:  # Portrait
+                tile.tile_type = Portrait(
+                    reader.string_u16(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u16(),
+                    reader.u16(),
+                )
+
+            case 49:  # GuildWeatherMachine
+                tile.tile_type = GuildWeatherMachine(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u8()
+                )
+
+            case 50:  # FossilPrepStation
+                tile.tile_type = FossilPrepStation(
+                    reader.u32()
+                )
+
+            case 51:  # DnaExtractor
+                tile.tile_type = DnaExtractor()
+
+            case 52:  # Howler
+                tile.tile_type = Howler()
+
+            case 53:  # ChemsynthTank
+                tile.tile_type = ChemsynthTank(
+                    reader.u32(),
+                    reader.u32()
+                )
+
+            case 54:  # StorageBlock
+                size = reader.u16()
+                items = []
+                for _ in range(size // 13):
+                    reader.skip(3)
+                    id_ = reader.u32()
+                    reader.skip(2)
+                    amount = reader.u32()
+                    items.append(StorageBlockItemInfo(id_, amount))
+                tile.tile_type = StorageBlock(items)
+
+            case 55:  # CookingOven
+                temp = reader.u32()
+                count = reader.u32()
+                ingredients = [CookingOvenIngredientInfo(reader.u32(), reader.u32()) for _ in range(count)]
+                reader.skip(12)
+                tile.tile_type = CookingOven(temp, ingredients)
+
+            case 56:  # AudioRack
+                tile.tile_type = AudioRack(
+                    reader.string_u16(),
+                    reader.u32()
+                )
+
+            case 57:  # GeigerCharger
+                raw = reader.u32()
+                s = min(raw, 3600)
+                tile.tile_type = GeigerCharger(
+                    s, 3600 - s, s // 36, s // 60, max(0, 60 - s // 60)
+                )
+
+            case 58:  # AdventureBegins
+                tile.tile_type = AdventureBegins()
+
+            case 59:  # TombRobber
+                tile.tile_type = TombRobber()
+
+            case 60:  # BallonOMatic
+                tile.tile_type = BallonOMatic(
+                    reader.u32(),
+                    reader.u8()
+                )
+
+            case 61:  # TrainingPort
+                tile.tile_type = TrainingPort(
+                    reader.u32(),
+                    reader.u16(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32()
+                )
+
+            case 62:  # ItemSucker
+                tile.tile_type = ItemSucker(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u16(),
+                    reader.u32()
+                )
+
+            case 63:  # CyBot
+                sync = reader.u32()
+                activated = reader.u32()
+                count = reader.u32()
+                commands = []
+                for _ in range(count):
+                    commands.append(CyBotCommandData(reader.u32(), reader.u32()))
+                    reader.skip(7)
+                tile.tile_type = CyBot(sync, activated, commands)
+
+            case 65:  # GuildItem
+                reader.skip(17)
+                tile.tile_type = GuildItem()
+
+            case 66:  # Growscan
+                tile.tile_type = Growscan(
+                    reader.u8()
+                )
+
+            case 67:  # ContainmentFieldPowerNode
+                jars = reader.u32()
+                size = reader.u32()
+                tile.tile_type = ContainmentFieldPowerNode(
+                    jars,
+                    [reader.u32() for _ in range(size)]
+                )
+
+            case 68:  # SpiritBoard
+                tile.tile_type = SpiritBoard(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32()
+                )
+
+            case 69:  # TesseractManipulator
+                tile.tile_type = TesseractManipulator(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32(),
+                )
+
+            case 72:  # StormyCloud
+                tile.tile_type = StormyCloud(
+                    reader.u32(),
+                    reader.u32(),
+                    reader.u32()
+                )
+
+            case 73:  # TemporaryPlatform
+                tile.tile_type = TemporaryPlatform(
+                    reader.u32()
+                )
+
+            case 74:  # SafeVault
+                tile.tile_type = SafeVault()
+
+            case 75:  # AngelicCountingCloud
+                tile.tile_type = AngelicCountingCloud(
+                    reader.u32(),
+                    reader.u16(),
+                    reader.u8()
+                )
+
+            case 77:  # InfinityWeatherMachine
+                interval = reader.u32()
+                tile.tile_type = InfinityWeatherMachine(
+                    interval,
+                    [reader.u32() for _ in range(reader.u32())]
+                )
+
+            case 79:  # PineappleGuzzler
+                tile.tile_type = PineappleGuzzler()
+
+            case 80:  # KrakenGalaticBlock
+                tile.tile_type = KrakenGalaticBlock(
+                    reader.u8(),
+                    reader.u32(),
+                    reader.u8(),
+                    reader.u8(),
+                    reader.u8()
+                )
+
+            case 81:  # FriendsEntrance
+                tile.tile_type = FriendsEntrance(
+                    reader.u32(),
+                    reader.u16(),
+                    reader.u16()
+                )
+
             case _:
-                print(f"[DEBUG] Unknown extra tile type: {extra_tile_type} at fg_id={tile.foreground_item_id}, position=({tile.x}, {tile.y})")
+                print(
+                    f"[WARN] Unknown tile extra {tile.tile_type} "
+                    f"fg={tile.foreground_item_id} "
+                    f"pos=({tile.x},{tile.y})"
+                    f"offset={reader.offset}"
+                )
                 tile.tile_type = Basic()

@@ -10,7 +10,7 @@ class LoginInfo:
         self.lmode = "1"
         self.f = "1"
         self.protocol = 225
-        self.game_version = "5.39"
+        self.game_version = "5.4"
         self.fz = "21905432"
         self.cbits = "0"
         self.player_age = "20"

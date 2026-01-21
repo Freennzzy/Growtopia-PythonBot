@@ -109,16 +109,17 @@ class DonationBox:
 class Mannequin:
     text: str
     unk_1: int
-    clothing_1 : int
-    clothing_2 : int
-    clothing_3 : int
-    clothing_4 : int
-    clothing_5 : int
-    clothing_6 : int
-    clothing_7 : int
-    clothing_8 : int
-    clothing_9 : int
-    clothing_10 : int
+    unk_2: int
+    unk_3: int
+    hat: int
+    shirt: int
+    pants: int
+    boots: int
+    face: int
+    hand: int
+    back: int
+    hair: int
+    neck: int
 
 @dataclass
 class BunnyEgg:
@@ -160,6 +161,10 @@ class CrimeInProgress:
     unk_3: int
 
 @dataclass
+class Spotlight:
+    pass
+
+@dataclass
 class DisplayBlock:
     item_id: int
 
@@ -167,27 +172,6 @@ class DisplayBlock:
 class VendingMachine:
     item_id: int
     price: int
-
-@dataclass
-class GivingTree:
-    unk_1: int
-    unk_2: int
-
-@dataclass
-class CountryFlag:
-    country: str
-
-@dataclass
-class WeatherMachine:
-    settings: int
-
-@dataclass
-class DataBedrock:
-    pass
-
-@dataclass
-class Spotlight:
-    pass
 
 @dataclass
 class FishTankPort:
@@ -201,6 +185,11 @@ class SolarCollector:
 @dataclass
 class Forge:
     temperature: int
+
+@dataclass
+class GivingTree:
+    unk_1: int
+    unk_2: int
 
 @dataclass
 class SteamOrgan:
@@ -223,6 +212,10 @@ class SilkWorm:
 @dataclass
 class SewingMachine:
     bold_id_list: List[int]
+
+@dataclass
+class CountryFlag:
+    country: str
 
 @dataclass
 class LobsterTrap:
@@ -255,8 +248,16 @@ class LockBot:
     time_passed: int
 
 @dataclass
+class WeatherMachine:
+    settings: int
+
+@dataclass
 class SpiritStorageUnit:
     ghost_jar_count: int
+
+@dataclass
+class DataBedrock:
+    pass
 
 @dataclass
 class Shelf:
@@ -394,6 +395,13 @@ class SpiritBoard:
     unk_3: int
 
 @dataclass
+class TesseractManipulator:
+    gems: int
+    unk_1: int
+    item_id: int
+    unk_2: int
+
+@dataclass
 class StormyCloud:
     sting_duration: int
     is_solid: int
@@ -434,13 +442,6 @@ class KrakenGalaticBlock:
 class FriendsEntrance:
     owner_user_id: int
     unk_1: int
-    unk_2: int
-
-@dataclass
-class TesseractManipulator:
-    gems: int
-    unk_1: int
-    item_id: int
     unk_2: int
 
 TileType = Union[
