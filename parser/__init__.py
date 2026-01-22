@@ -1,1 +1,0 @@
-from .world_parser import parse_map_data

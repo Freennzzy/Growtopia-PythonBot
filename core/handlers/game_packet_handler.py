@@ -27,7 +27,11 @@ def onCallFunction(client, data):
 def onSendMapData(client, data):
     with open("cache/world.dat", "wb") as f:
         f.write(data)
-    client.world.parse(data, client.items_database)
+    try:
+        client.world.parse(data, client.items_database)
+    except Exception as e:
+        print(f"Failed to parse world: {e}")
+        raise
 
 def onSendInventoryState(client, data):
     client.inventory.parse(data)

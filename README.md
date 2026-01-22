@@ -36,7 +36,7 @@ $ python -m core.main
 2. Install required packages:
 ```shell
 $ pkg update && pkg upgrade -y
-$ pkg install python clang make git rust -y
+$ pkg install python clang make git -y
 ```
 3. Clone the repository:
 ```shell
@@ -57,8 +57,8 @@ $ python -m core.main
 This project is based on the work by [CLOEI](https://github.com/CLOEI/gt.python), who is the original author of the Growtopia Python bot. This version includes some custom modification and additional features.
 
 - Original author: [CLOEI](https://github.com/CLOEI)
-- Code Parser by: [badewen](https://github.com/badewen/Growtopia-Things)
+- [badewen](https://github.com/badewen/Growtopia-Things)
 
 ## License
 
-This project is open-source and available under the [MIT License](https://github.com/Freennzzy/Growtopia-PythonBot/blob/main/LICENSE)
+This project is open-source and available under the MIT License. See the [LICENSE](https://github.com/Freennzzy/Growtopia-PythonBot/blob/main/LICENSE) file for details.

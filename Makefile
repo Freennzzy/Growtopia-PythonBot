@@ -17,15 +17,11 @@ endif
 
 LIB_NAME = enet/enet$(LIB_EXT)
 
-all: $(LIB_NAME) requirements parse-items
+all: $(LIB_NAME) requirements
 
 requirements:
 	@echo "Installing Python requirements..."
 	pip install -r requirements.txt
-
-parse-items:
-	@echo "Parsing items..."
-	python parser/items_parser.py
 
 $(LIB_NAME): enet/enet.cpp
 	@echo "Compiling enet for $(UNAME_S)..."
