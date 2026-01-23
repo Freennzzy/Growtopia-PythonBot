@@ -1,4 +1,5 @@
-from core.utils import hex, mac, generate_klv, string
+from core.entities.enums import HashMode
+from core.utils import hex, mac, generate_klv, hash
 
 class LoginInfo:
     def __init__(self):
@@ -27,8 +28,8 @@ class LoginInfo:
         self.wk = hex(32, uppercase=True)
         self.zf = "-1623530258"
         self.klv = generate_klv(self.protocol, self.game_version, self.rid)
-        self.hash = string(f"{self.mac}RT")
-        self.hash2 = string(f"{hex(16, uppercase=True)}RT")
+        self.hash = hash(f"{self.mac}RT".encode("ascii"), HashMode.NullTerminated)
+        self.hash2 = hash(f"{hex(16, uppercase=True)}RT".encode("ascii"), HashMode.NullTerminated)
         self.uuid = None
         self.user = None
         self.door_id = None

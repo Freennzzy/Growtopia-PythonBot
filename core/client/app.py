@@ -105,3 +105,9 @@ class Bot:
             print("Failed to send raw packet.")
         else:
             print("Sent raw packet successfully.")
+
+    def warp(self, world_name: str):
+        self.send_packet(NetMessage.GameMessage, f"action|join_request\nname|{world_name}\ninvitedWorld|0\n")
+
+    def leave(self):
+        self.send_packet(NetMessage.GameMessage, "action|quit_to_exit\n")

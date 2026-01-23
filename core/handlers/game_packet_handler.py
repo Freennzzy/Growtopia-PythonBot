@@ -1,6 +1,8 @@
 import ctypes
+import zlib
 from .variant_handler import VariantHandler
-from core.entities.enums import NetGamePacket
+from core.entities.enums import NetGamePacket, NetMessage
+from core.manager import load_from_file
 from core.ffi import TankPacket
 
 class GamePacketHandler:
@@ -18,6 +20,8 @@ class GamePacketHandler:
                 onSendMapData(client, extended_data)
             case NetGamePacket.SendInventoryState:
                 onSendInventoryState(client, extended_data)
+            case NetGamePacket.SendItemDatabaseData:
+                onSendItemDatabaseData(client, extended_data)
             case NetGamePacket.PingRequest:
                 onPingRequest(client, tank_data)
 
@@ -27,6 +31,7 @@ def onCallFunction(client, data):
 def onSendMapData(client, data):
     with open("cache/world.dat", "wb") as f:
         f.write(data)
+
     try:
         client.world.parse(data, client.items_database)
     except Exception as e:
@@ -35,6 +40,20 @@ def onSendMapData(client, data):
 
 def onSendInventoryState(client, data):
     client.inventory.parse(data)
+
+def onSendItemDatabaseData(client, data):
+    decoder = zlib.decompress(data)
+    with open("cache/items.dat", "wb") as f:
+        f.write(decoder)
+
+    client.send_packet(NetMessage.GenericText, "action|enter_game\n")
+    client.redirected = False
+
+    try:
+        client.items_database = load_from_file("cache/items.dat")
+    except Exception as e:
+        print(f"Failed to load items.dat: {e}")
+        raise
 
 def onPingRequest(client, data):
     print("Received PingRequest, sending PingReply.")

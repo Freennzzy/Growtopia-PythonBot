@@ -1,5 +1,6 @@
-from core.entities.enums import NetMessage
-from core.utils import VariantList
+from core.entities.enums import NetMessage, HashMode
+from core.manager import load_from_file
+from core.utils import VariantList, hash
 from core.ffi import enet_peer_disconnect
 
 class VariantHandler:
@@ -21,7 +22,7 @@ class VariantHandler:
             case "OnSendToServer":
                 onSendToServer(client, variant_list)
             case "OnSuperMainStartAcceptLogonHrdxs47254722215a":
-                onSuperMainStartAcceptLogonHrdxs47254722215a(client)
+                onSuperMainStartAcceptLogonHrdxs47254722215a(client, variant_list)
             case "OnConsoleMessage":
                 onConsoleMessage(variant_list)
 
@@ -44,8 +45,32 @@ def onSendToServer(client, var):
     print(f"Redirecting to server {client.address}:{client.port} with token {token} and user ID {user_id}.")
     enet_peer_disconnect(client.peer, 0)
 
-def onSuperMainStartAcceptLogonHrdxs47254722215a(client):
-    client.send_packet(NetMessage.GenericText, "action|enter_game\n")
+def onSuperMainStartAcceptLogonHrdxs47254722215a(client, var):
+    server_hash = var.get(1).as_uint32()
+
+    try:
+        with open("cache/items.dat", "rb") as f:
+            data = f.read()
+
+        print("items.dat size:", len(data))
+        hash_value = hash(data, HashMode.FixedLength, len(data)) & 0xFFFFFFFF
+
+        if hash_value == server_hash:
+            client.send_packet(NetMessage.GenericText, "action|enter_game\n")
+            client.redirected = False
+
+            try:
+                client.items_database = load_from_file("cache/items.dat")
+            except Exception as e:
+                print(f"Failed to load items.dat: {e}")
+                raise
+
+            return
+
+    except FileNotFoundError:
+        print("Fetching server items.dat...")
+
+    client.send_packet(NetMessage.GenericText, "action|refresh_item_data\n")
 
 def onConsoleMessage(var):
     message = var.get(1).as_string()
